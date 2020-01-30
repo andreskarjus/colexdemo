@@ -14,7 +14,7 @@ params = list(
   wordlen_min       = 3     , # length of words from simlex to use
   wordlen_max       = 7     ,
   assocmax          = 1     , # filter out "free-associated" words ([0,10] but most are <1)
-  poslist           = c("N"), # which POS to use
+  poslist           = "N"   , # which POS to use
   nwords            = 10    , # size of natural language lexicon to use per stim set (see also nlang below!)
   nstims            = 50    , # how many stim sets to create (i.e. how many dyads will be run)
   nsimilar          = 1     , # how many pairs to have which are > simthreshold_high
@@ -37,7 +37,8 @@ params = list(
               "wtps")       , # letters in the English wordlist to homogenize to catch stims that are 
                               # similar-sounding o English words; must be 2 strings of equal(!) length, 
                               # those in 1 transformed into those in 2
-  maxinitial = 1            , # times each consonant is allowed to start an artificial word per stim set
+  maxinitial = 100          , # times each consonant is allowed to start an artificial word per stim set (high=disables)
+  constraininitials = T     , # Constrain artificial words: initial letter cannot overlap with English stims
   
   # experiment run options
   nrounds   = 450           , # number of rounds for each dyad
@@ -77,7 +78,10 @@ We draw the English vocabulary from the Simlex999 dataset (Hill et al. 2015) whi
 
 ### The artificial vocabulary
 
-The artificial language for experiment was created as follows. Each "word" would have a length of *`r params$langlen*2`* characters. They were randomly generated from CV syllables, in turn constructed from a set of vowels (*`r params$vowels`*) and consonants (*`r params$cons`*). In each game stimulus set, a consonant was allowed to occur as the initial letter only *`r ifelse(params$maxinitial==1, "once", paste(params$maxinitial, " times"))`*. We used a large English wordlist to exclude any actual English words, and made sure all artificial words were at least *`r params$editmin`* edits distant from each other as well as from the English words in the same game.
+The artificial language for experiment was created as follows. Each "word" would have a length of *`r params$langlen*2`* characters. They were randomly generated from CV syllables, in turn constructed from a set of vowels (*`r params$vowels`*) and consonants (*`r params$cons`*). 
+<!-- In each game stimulus set, a consonant was allowed to occur as the initial letter only *`r ifelse(params$maxinitial==1, "once", paste(params$maxinitial, " times"))`*.  -->
+We further constrained the artificial language so that the initial letters of the words would not overlap with any initial letters of the English words in a given stimulus set.
+We used a large English wordlist to exclude any actual English words, and made sure all artificial words were at least *`r params$editmin`* edits distant from each other as well as from the English words in the same game.
 
 
 ## Experimental manipulation
@@ -99,7 +103,7 @@ nothers = round(round((params$nrounds - ntarget) / (ncombos-1))*(ncombos-1))
 
 We manipulate a single parameter, the occurrence rate of the target (synonymous) pair as the pair that the participants must communicate and guess the meaning of. The distractors have uniform probability of occurrence. This simulates communicative need: if a pair never co-occurs, then it is a good candidate to be co-lexified - there is no need to disambiguate it. If a target pair always co-occurs, then co-lexifying it would obviously be detrimental to communicative efficiency. Note that the game length (i.e., number of pairs shown per game) varies between games by a maximum of *`r abs(max(nothers-params$nrounds))`* rounds to allow for equal distributions of the distractor pairs.
 
-Given a set of *`r params$nwords`* English words, there are *`r ncombos`* possible pairings, one of which is the target pair (the target words also occur indpendently in other, distractor pairs). If a game is played for *`r params$nrounds`* rounds, given a uniform occurrence rate, each pair will occur *`r neach`* times, and each English word will be displayed for *`r mean(table(c(combn(1:params$nwords, 2)))*10)`* times. The following figures illustrate the number of times a target pair occurs given different occurrence rates. 
+Given a set of *`r params$nwords`* English words, there are *`r ncombos`* possible pairings, one of which is the target pair (the target words also occur indpendently in other, distractor pairs). If a game is played for *`r params$nrounds`* rounds, given a uniform occurrence rate, each pair will occur *`r neach`* times, and each English word will be displayed for *`r mean(table(c(combn(1:params$nwords, 2)))*10)`* times. The following figures illustrate the number of times a target pair occurs given different occurrence rates. On the stacked barplot on the right, the coloured blocks illustrate the counts of word pairs being shown in a given game.
 
 * *the vocab size and number of rounds and burn-in period need figuring out! consider these numbers just examples*
 * *not sure if there's any point in having target-only games - then the size of the artificial lexicon doesn't matter, there's plenty to choose from, absolutely no need to colexify; or have them it in as a sort of a control?  also, could have a flat'ish right-shifted sigmoid here, but then the count distributions look more (even more) wonky because of rounding*

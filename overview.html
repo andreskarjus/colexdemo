@@ -8,7 +8,7 @@ params = list(
   wordlen_min       = 3     , # length of words from simlex to use
   wordlen_max       = 7     ,
   assocmax          = 1     , # filter out &quot;free-associated&quot; words ([0,10] but most are &lt;1)
-  poslist           = c(&quot;N&quot;), # which POS to use
+  poslist           = &quot;N&quot;   , # which POS to use
   nwords            = 10    , # size of natural language lexicon to use per stim set (see also nlang below!)
   nstims            = 50    , # how many stim sets to create (i.e. how many dyads will be run)
   nsimilar          = 1     , # how many pairs to have which are &gt; simthreshold_high
@@ -31,7 +31,8 @@ params = list(
               &quot;wtps&quot;)       , # letters in the English wordlist to homogenize to catch stims that are 
                               # similar-sounding o English words; must be 2 strings of equal(!) length, 
                               # those in 1 transformed into those in 2
-  maxinitial = 1            , # times each consonant is allowed to start an artificial word per stim set
+  maxinitial = 100          , # times each consonant is allowed to start an artificial word per stim set (high=disables)
+  constraininitials = T     , # Constrain artificial words: initial letter cannot overlap with English stims
   
   # experiment run options
   nrounds   = 450           , # number of rounds for each dyad
@@ -60,13 +61,13 @@ params = list(
 </div>
 <div id="the-artificial-vocabulary" class="section level3">
 <h3>The artificial vocabulary</h3>
-<p>The artificial language for experiment was created as follows. Each “word” would have a length of <em>4</em> characters. They were randomly generated from CV syllables, in turn constructed from a set of vowels (<em>aeoui</em>) and consonants (<em>qwtpsfhnmrl</em>). In each game stimulus set, a consonant was allowed to occur as the initial letter only <em>once</em>. We used a large English wordlist to exclude any actual English words, and made sure all artificial words were at least <em>3</em> edits distant from each other as well as from the English words in the same game.</p>
+<p>The artificial language for experiment was created as follows. Each “word” would have a length of <em>4</em> characters. They were randomly generated from CV syllables, in turn constructed from a set of vowels (<em>aeoui</em>) and consonants (<em>qwtpsfhnmrl</em>). <!-- In each game stimulus set, a consonant was allowed to occur as the initial letter only *100  times*.  --> We further constrained the artificial language so that the initial letters of the words would not overlap with any initial letters of the English words in a given stimulus set. We used a large English wordlist to exclude any actual English words, and made sure all artificial words were at least <em>3</em> edits distant from each other as well as from the English words in the same game.</p>
 </div>
 </div>
 <div id="experimental-manipulation" class="section level2">
 <h2>Experimental manipulation</h2>
 <p>We manipulate a single parameter, the occurrence rate of the target (synonymous) pair as the pair that the participants must communicate and guess the meaning of. The distractors have uniform probability of occurrence. This simulates communicative need: if a pair never co-occurs, then it is a good candidate to be co-lexified - there is no need to disambiguate it. If a target pair always co-occurs, then co-lexifying it would obviously be detrimental to communicative efficiency. Note that the game length (i.e., number of pairs shown per game) varies between games by a maximum of <em>10</em> rounds to allow for equal distributions of the distractor pairs.</p>
-<p>Given a set of <em>10</em> English words, there are <em>45</em> possible pairings, one of which is the target pair (the target words also occur indpendently in other, distractor pairs). If a game is played for <em>450</em> rounds, given a uniform occurrence rate, each pair will occur <em>10</em> times, and each English word will be displayed for <em>90</em> times. The following figures illustrate the number of times a target pair occurs given different occurrence rates.</p>
+<p>Given a set of <em>10</em> English words, there are <em>45</em> possible pairings, one of which is the target pair (the target words also occur indpendently in other, distractor pairs). If a game is played for <em>450</em> rounds, given a uniform occurrence rate, each pair will occur <em>10</em> times, and each English word will be displayed for <em>90</em> times. The following figures illustrate the number of times a target pair occurs given different occurrence rates. On the stacked barplot on the right, the coloured blocks illustrate the counts of word pairs being shown in a given game.</p>
 <ul>
 <li><em>the vocab size and number of rounds and burn-in period need figuring out! consider these numbers just examples</em></li>
 <li><em>not sure if there’s any point in having target-only games - then the size of the artificial lexicon doesn’t matter, there’s plenty to choose from, absolutely no need to colexify; or have them it in as a sort of a control? also, could have a flat’ish right-shifted sigmoid here, but then the count distributions look more (even more) wonky because of rounding</em></li>

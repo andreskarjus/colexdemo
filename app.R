@@ -4,7 +4,7 @@
 
 #### shiny app ####
 
-#setwd("C:/Users/s1364178/Dropbox/phd/experiment/app") # remove when uploaded; needed for includeHTML on local
+# setwd("C:/Users/s1364178/Dropbox/phd/experiment/app") # remove when uploaded; needed for includeHTML on local
 
 # updater: rsconnect::deployApp("C:/Users/s1364178/Dropbox/phd/experiment/app"  )
 
@@ -134,7 +134,8 @@ ui =   fluidPage(
                         # # similar-sounding o English words; must be 2 strings of equal(!) length, 
                         # # those in 1 transformed into those in 2
                         numericInput("maxinitial",
-                                     "Times each consonant is allowed to start an artificial word per stim set:", 1),
+                                     "Times each consonant is allowed to start an artificial word per stim set; high value effectively disables:", 100),
+                        checkboxInput("constraininitials", "Constrain artificial words: initial letter cannot overlap with English stims (conficts with low values of the times option above!)", T),
                         actionButton("makelang", "(2) Generate an artificial language"),
                         HTML("<br><br>"),
                         actionButton("makestims", HTML("(3) Generate stims by combining English <br>and artificial words (+scroll down)"))
@@ -143,6 +144,7 @@ ui =   fluidPage(
                  )
                ),  # fluidrow
                HTML("<br>"),
+                tags$style(type='text/css', '#errorbar {color: red;}'),
                verbatimTextOutput("errorbar", placeholder = T),
                verbatimTextOutput("wordexample"),
                verbatimTextOutput("langexample"),
@@ -226,7 +228,8 @@ server <- function(input, output) {
                                              input$nlang, 
                                              input$editmin, 
                                              input$cons, 
-                                             input$maxinitial)
+                                             input$maxinitial,
+                                             input$constraininitials)
                        global$ready = sample(1:length(stims$stims), 1) # for demo view
                      })
                    }, error = function(e){e$e <<- e})

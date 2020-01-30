@@ -181,14 +181,21 @@ langgen = function(langlen, engdict, maxinitial, vowels, cons, transl){
 }
 
 # function to go through stim word sample sets, and find a suitable artificial language lexicon
-stimgen = function(stims_words, lang, nlang, editmin, cons, maxinitial){
+stimgen = function(stims_words, lang, nlang, editmin, cons, maxinitial, constraininitials){
   stimlist = vector("list", length(stims_words))
   vocabdist = stringdistmatrix(lang, unique(unlist(stims_words, use.names = F)), useNames = T )
   # langdist  = stringdistmatrix(lang, useNames = T) %>% as.matrix()
   cons=strsplit(cons, "")[[1]]
   ncons = length(cons)
+  if(constraininitials){ # if initials should not overlap with language stims
+      initials = substr(lang, 1,1)
+  }
   for(s in seq_along(stims_words)){
-    candidates = sample(lang) # reshuffle language
+    candidates = lang
+    if(constraininitials){ # if initials should not overlap with language stims
+      candidates = candidates[ which(!(initials %in% substr(stims_words[[s]],1,1) ) ) ]
+    }
+    candidates = sample(candidates) # reshuffle language
     cl=length(candidates)
     i2=1
     y = rep(NA, nlang)
@@ -209,7 +216,7 @@ stimgen = function(stims_words, lang, nlang, editmin, cons, maxinitial){
       }
       if(!all(ok) | i2>cl ){
         stop(paste("Could not find artificial lang solution for stim no", s,
-                   "(which is weird, the list should be huge, unless the input letter strings are tiny)"))
+                   "(which is weird, the list should be huge - unless the input letter strings are tiny, or the constraints conflict, see above)"))
       } else { # if candidate matches conditions then add and move on
         y[ii] = y2
       }
