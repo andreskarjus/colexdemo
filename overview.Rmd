@@ -1,0 +1,212 @@
+---
+title: ""
+output: 
+  html_fragment:
+    mathjax: yes
+---
+
+<br>
+
+```{r}
+# Parameters referred to/used in the following text
+params = list(
+  # experiment stims in English:
+  wordlen_min       = 3     , # length of words from simlex to use
+  wordlen_max       = 7     ,
+  assocmax          = 1     , # filter out "free-associated" words ([0,10] but most are <1)
+  poslist           = c("N"), # which POS to use
+  nwords            = 10    , # size of natural language lexicon to use per stim set (see also nlang below!)
+  nstims            = 50    , # how many stim sets to create (i.e. how many dyads will be run)
+  nsimilar          = 1     , # how many pairs to have which are > simthreshold_high
+  allowduplicates   = 3     , # how many max duplicate target pairs across stims 
+                              # 3 for 40 stims if 1 pair, 5 if 2)
+                              # making it equal to nstims will disable the check alltogether
+  simthreshold_high = 8     , # above this is a "similar" word [0,10] - this is for simlex
+  simthreshold_low  = 0.3   , # below this is a "not similar" word [0,1] - this is for the vector cosine
+                              # with nwords=20 and nsimilar=2 0.3 was minimum feasible, can do less if smaller lexicon  
+   editmin          = 3     , # edit distance threshold for both natural and artificial words; 
+                              # uses Optimal String Alignment (Levenshtein + transposition)
+  allowsameinitial  = T     , # allow target pairs to have the same initial letter? (allows eg hero-heroine)
+ 
+  # artificial language and stims:
+  nlang     = 9             , # size of artificial language lexicon (see also nwords above!)
+  langlen   = 2             , # uniform length of artificial words, in number of CV syllables
+  vowels    = "aeoui"       , # string of allowed vovels
+  cons      = "qwtpsfhnmrl" , # string of allowed consonants
+  transl    = c("vdbz", 
+              "wtps")       , # letters in the English wordlist to homogenize to catch stims that are 
+                              # similar-sounding o English words; must be 2 strings of equal(!) length, 
+                              # those in 1 transformed into those in 2
+  maxinitial = 1            , # times each consonant is allowed to start an artificial word per stim set
+  
+  # experiment run options
+  nrounds   = 450           , # number of rounds for each dyad
+  burnin    = 50              # number of rounds which are not taken into account when calculating colexification
+  
+)
+```
+
+<br>
+
+## Methods
+
+## Participants
+
+...
+
+## Procedure
+
+The experiment simulates language evolution using a pair-based, computer-mediated communication game setup (cf.
+Scott-Phillips & Kirby, 2010; Galantucci, Garrod & Roberts, 2012, Winter at al., 2015; Kirby et al., 2015). Participants are provided a small artificial language lexicon which they see on their screen throughout the game. There is no "training" phase - in order to successfully communicate, the participants must negotiate and establish the correspondences between the signals and the meanings through trial and error.
+At each round, the participants take turns being the "sender" and the "receiver" of a message. 
+The message or meaning space consists of English common nouns. The sender of the round is randomly shown two possible messages, and instructed to communicate one of them, using a word from the artificial lexicon (the "signals"). The receiver is shown the same pair of messages, the communicated signal, and must guess which message it represents, by clicking on an word in the artificial vocabulary list. After taking a guess, both participants are informed whether the receiver guessed correctly, before switching roles.
+
+
+This artificial vocabulary list is reshuffled at every round. This makes the game slower, as the participants have to look up the word every time they communicate and guess, but is necessary to avoid the emergence of positional codes like "first item on the list = word on the left".
+The participants never see the entire English word set on the screen at any time. In the English set for each game, there is *`r params$nsimilar`* pair(s) of high-similarity words - the targets of interest - and *`r params$nwords-(params$nsimilar*2)`* words - distractors - that have low similarity scores to all other words, including the targets.
+
+
+## Stimuli
+
+Each game played by the participants would employ a set of *`r params$nwords`* English words (the "meanings") and a smaller set of *`r params$nlang`* artificial language words (the signals). The signal set being smaller means that to communicate efficiently, the participants must co-lexify some words.
+
+### The English vocabulary
+
+We draw the English vocabulary from the Simlex999 dataset (Hill et al. 2015) which consists of pairs of words and their crowd-sourced similarity judgements. Simlex999 was built for evaluating models of meaning with the explicit goal of distinguishing genuine similarity (synonymy) from simple associativity. We use a subset of the words in the dataset that are common nouns of *`r params$wordlen_min`* to *`r params$wordlen_max`* characters in length. The target pairs are required to have a Simlex similarity score of at least *`r params$simthreshold_high`* out of 10. Since Simlex does not have scores for all possible word pairs in its lexicon, we also used publicly available pre-trained word embeddings (fasttext trained on the Wikipedia dump, cf. Bojanowski et al., 2017) to obtain additional computational measures of similarity. In particular, we use these to ensure low similarity between the distractor set for each game, which was sampled so that no two words would have vector cosine similarity above *`r params$simthreshold_low`* (out of 1). Furthermore, no two words were allowed to be similar in form - we used an edit distance threshold of at least *`r params$editmin`* (calculated using optimal string alignment, i.e. Levenshtein with transpositions).
+
+
+### The artificial vocabulary
+
+The artificial language for experiment was created as follows. Each "word" would have a length of *`r params$langlen*2`* characters. They were randomly generated from CV syllables, in turn constructed from a set of vowels (*`r params$vowels`*) and consonants (*`r params$cons`*). In each game stimulus set, a consonant was allowed to occur as the initial letter only *`r ifelse(params$maxinitial==1, "once", paste(params$maxinitial, " times"))`*. We used a large English wordlist to exclude any actual English words, and made sure all artificial words were at least *`r params$editmin`* edits distant from each other as well as from the English words in the same game.
+
+
+## Experimental manipulation
+
+```{r, echo=F,warning=F,message=F}
+library(ggplot2)
+library(reshape2)
+library(patchwork)
+#targetprob= (1/(1+exp(-5*(seq(0,1,length.out = 48)-0.6) ) )) # sigmoid
+#c(0,(1/(1+exp(-15*(seq(0,1,length.out = 48)-0.5) ) )),1) 
+targetprob = (seq(0,0.9, length.out = 50))  # linear
+
+ncombos = ncol(combn(1:params$nwords, 2))
+neach   = round(params$nrounds/ncombos,2)
+ntarget = (round(params$nrounds*targetprob))
+nothers = round(round((params$nrounds - ntarget) / (ncombos-1))*(ncombos-1))
+```
+
+
+We manipulate a single parameter, the occurrence rate of the target (synonymous) pair as the pair that the participants must communicate and guess the meaning of. The distractors have uniform probability of occurrence. This simulates communicative need: if a pair never co-occurs, then it is a good candidate to be co-lexified - there is no need to disambiguate it. If a target pair always co-occurs, then co-lexifying it would obviously be detrimental to communicative efficiency. Note that the game length (i.e., number of pairs shown per game) varies between games by a maximum of *`r abs(max(nothers-params$nrounds))`* rounds to allow for equal distributions of the distractor pairs.
+
+Given a set of *`r params$nwords`* English words, there are *`r ncombos`* possible pairings, one of which is the target pair (the target words also occur indpendently in other, distractor pairs). If a game is played for *`r params$nrounds`* rounds, given a uniform occurrence rate, each pair will occur *`r neach`* times, and each English word will be displayed for *`r mean(table(c(combn(1:params$nwords, 2)))*10)`* times. The following figures illustrate the number of times a target pair occurs given different occurrence rates. 
+
+* *the vocab size and number of rounds and burn-in period need figuring out! consider these numbers just examples*
+* *not sure if there's any point in having target-only games - then the size of the artificial lexicon doesn't matter, there's plenty to choose from, absolutely no need to colexify; or have them it in as a sort of a control?  also, could have a flat'ish right-shifted sigmoid here, but then the count distributions look more (even more) wonky because of rounding*
+
+```{r,echo=F,warning=F,message=F,fig.width=12}
+
+g1 = ggplot() + aes(x=1:length(targetprob),y= ntarget/(ntarget+nothers)  )+ #targetprob) + 
+  geom_point() + 
+  geom_line(aes(y=targetprob), size=2, alpha=0.2) +
+  theme_minimal() + 
+  labs(x="games", y="% of rounds where target pair occurs\n(and must be disambiguated)",
+       subtitle="The horizontal blue line marks the point where the distribution of word pairs \n(including the target(s) and distractors) that get displayed is uniform.") +
+  geom_hline(yintercept=(params$nrounds/ncombos)/params$nrounds, alpha=0.4, size=1,color="blue") +
+  ylim(0,1)
+   
+#```
+
+
+#```{r,echo=F,warning=F,message=F}
+
+pframe = data.frame(game=NULL, pair=NULL, n=NULL)
+for(i in seq_along(ntarget)){ # games
+  pframe = rbind(pframe, 
+                 data.frame(game=rep(i, ncombos), 
+                            pair= 1: ncombos ,
+                            n = c(rep(nothers[i]/(ncombos-1), ncombos-1) ,ntarget[i])
+                 )
+  )
+}
+pframe$game=as.factor(pframe$game); pframe$pair = as.factor(pframe$pair)
+#plist   = lapply(nothers, function(x) c(x/(rep(ncombos-1, ncombos-1 )), ntarget ) )
+
+library(viridisLite)
+
+cols=c(c(t(matrix(viridis(ncombos-1, begin=0.2, end=0.8),ncol=2))), viridis(1,option="A"))
+
+g2=ggplot(pframe, aes(x=game, fill=pair, y=n)) + geom_bar(stat = "identity") + theme_minimal() + labs(x="games", y="count distributions of pairs in 50 games", subtitle = "The greenish are the distractor pairs, black is the target one") + theme(legend.position = "none") + scale_fill_manual(values=cols)
+
+g1+g2
+   
+```
+
+
+* *an alternative to the single-continuous-condition condition -> have three conditions: never-co-occurring, uniform distribution (the blue line below), and a high co-occurrence rate (but probably not 100%, that would neglect the rest of the vocab):*
+
+```{r,echo=F,warning=F,message=F,fig.width=12}
+#targetprob= (1/(1+exp(-10*(seq(0,1,length.out = 48)-0.6) ) )) # sigmoid
+#c(0,(1/(1+exp(-15*(seq(0,1,length.out = 48)-0.5) ) )),1) 
+ #targetprob = (seq(0,0.9, length.out = 50))  # linear
+targetprob = c(rep(0, 16), rep((params$nrounds/ncombos)/params$nrounds, 17), rep(0.5, 17) )
+
+ntarget = (round(params$nrounds*targetprob))
+nothers = round(round((params$nrounds - ntarget) / (ncombos-1))*(ncombos-1))
+
+g1 = ggplot() + aes(x=1:length(targetprob),y= ntarget/(ntarget+nothers)  )+ #targetprob) + 
+  geom_point() + 
+  geom_line(aes(y=targetprob), size=2, alpha=0.2) +
+  theme_minimal() + 
+  labs(x="games", y="% of rounds where target pair occurs\n(and must be disambiguated)",
+       subtitle="The horizontal blue line marks the point where the distribution of word pairs \n(including the target(s) and distractors) that get displayed is uniform.") +
+  geom_hline(yintercept=(params$nrounds/ncombos)/params$nrounds, alpha=0.4, size=1,color="blue") +
+  ylim(0,1)
+   
+#```
+
+
+#```{r,echo=F,warning=F,message=F}
+
+pframe = data.frame(game=NULL, pair=NULL, n=NULL)
+for(i in seq_along(ntarget)){ # games
+  pframe = rbind(pframe, 
+                 data.frame(game=rep(i, ncombos), 
+                            pair= 1: ncombos ,
+                            n = c(rep(nothers[i]/(ncombos-1), ncombos-1) ,ntarget[i])
+                 )
+  )
+}
+pframe$game=as.factor(pframe$game); pframe$pair = as.factor(pframe$pair)
+#plist   = lapply(nothers, function(x) c(x/(rep(ncombos-1, ncombos-1 )), ntarget ) )
+
+library(viridisLite)
+
+cols=c(c(t(matrix(viridis(ncombos-1, begin=0.2, end=0.8),ncol=2))), viridis(1,option="A"))
+
+g2=ggplot(pframe, aes(x=game, fill=pair, y=n)) + geom_bar(stat = "identity") + theme_minimal() + labs(x="games", y="count distributions of pairs in 50 games", subtitle = "The greenish are the distractor pairs, black is the target one") + theme(legend.position = "none") + scale_fill_manual(values=cols)
+
+g1+g2
+
+```
+
+* *come to think of it, perhaps an even smaller vocabulary (less possible pairs) would be easier?*
+
+## Hypotheses
+
+The distractor pairs always occur an equal number of times respective to each other. The proportion of rounds where the target pair is displayed varies. This is taken to be a proxy to communicative need. 
+In games where the pair never co-occur, there is no need to distinguish the two meanings. We expect the target to be co-lexified in those games. 
+Where all pairs are displayed an equal number of times, we expect the target to be co-lexified as well, following Xu et al. ([to appear]). 
+Where the pair does appear, there is need to distinguish the meanings, and co-lexification would be detrimental to communicative success.
+In short, we hypothesize the co-lexification of the target pair to correlate negatively with its proportion of occurrence.
+
+
+<br>
+
+
+
+
+
+
+
+
