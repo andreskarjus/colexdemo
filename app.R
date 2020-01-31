@@ -6,7 +6,8 @@
 
 # setwd("C:/Users/s1364178/Dropbox/phd/experiment/app") # remove when uploaded; needed for includeHTML on local
 
-# updater: rsconnect::deployApp("C:/Users/s1364178/Dropbox/phd/experiment/app"  )
+# updater: 
+#   rsconnect::deployApp("C:/Users/s1364178/Dropbox/phd/experiment/app"  )
 
 source("expgen_scripts.R")
 load("appdata.RData")
@@ -293,13 +294,20 @@ server <- function(input, output) {
     if(!is.null(stims$stims)){
       i=global$ready
       we=sample(stims$words[[i]], 2)
-      le=sample(stims$stims[[i]])
-      
+      le=stims$stims[[i]] #sample(stims$stims[[i]])
+      lb=sample(c(T,T,T,F),1)
       return(
         tagList(
-          h1(paste0("Score: ", 0, "/", 100)),
-          h2(paste0(
-            we[1] , " | ", we[2]  ) ),
+          h1(paste0("Score: ", 0, "/", 450)),
+          h2(HTML(paste0(
+            paste(rep("&nbsp;", sample(0:15,1)),collapse=""),
+            we[1] , 
+            ifelse(lb, "<br>", paste(rep("&nbsp;", sample(3:8,1)),collapse="")),
+            paste(rep("&nbsp;", sample(0:15,1)),collapse=""),
+            we[2],
+            ifelse(!lb,"<br>&nbsp;&nbsp;", "")
+            
+            ) )),
           ## Use radio or actionButtons?
           radioButtons(inputId = "wordchoice",
                        label = paste0('Communicate "',
