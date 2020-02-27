@@ -1,0 +1,10 @@
+name: labapp
+title: labapp
+username:
+account: akarjus
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1845149
+bundleId: 2834342
+url: https://akarjus.shinyapps.io/labapp/
+when: 1582812215.51519
