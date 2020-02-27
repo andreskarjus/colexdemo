@@ -63,7 +63,7 @@ vocab = generated_stims[[whichstim]]$words
 # ----------debug------------------ -
 #whichstim=2
 #BREAKTIME = 1000  
- pairs = pairs[1,,drop=F]
+# pairs = pairs[1,,drop=F]
 # --------------------------------- -
 
 
