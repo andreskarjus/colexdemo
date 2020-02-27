@@ -75,9 +75,11 @@ texts = list(
   In the following game, you and your partner will be taking turns sending 
   each other encrypted messages using a secret language.
   The possible messages appear as pairs of words on the screen (in random order).
-  To make it impossible for the Enemy to decode your correspondence, even you won't know at the start how the secret language works - your job is to find a way to use it for successful communication. 
+  To make it impossible for the Enemy to decode your correspondence, even you won't know 
+  at the start how the secret language works - your job is to find a way to use it for successful communication. 
   Every time you guess the meaning of a message correctly, your score increases.
-  Tip: when sending messages and guessing their meanings, try to remember how you and your partner used them in the previous rounds.
+  Tip: when sending messages and guessing their meanings, try to remember how you 
+  and your partner used them in the previous rounds.
   <br>
   <br>
   Please communicate only using the game interface - do not talk or gesture during the game.
@@ -92,8 +94,12 @@ texts = list(
   endtitle = "That's it. Thanks for participating!",
   feedbackask = "Please describe how you picked the words to communicate the messages. Any other feedback is also welcome.",
   finishbutn = "Click here to submit the feedback and finish the game",
-  finishbutn2= "Thanks. Goodbye!"
+  finishbutn2= "Thanks. Goodbye!",
+  error = "Something is wrong! If you were in the middle of a game, click the button below to continue.
+  <br>If you came here to play a game and are seeing this, then it means there are already 2 people playing - please exit now. 
+  <br>But if you think you should be scheduled to play right now, please contact the experimenter to clear it up.<br>"
 )
+
 
 
 # determines which word is on which line to add randomness, and line placement:
@@ -159,7 +165,7 @@ ui <- fluidPage(
       }
       .centered {
         margin: auto; 
-        width: 450px;
+        width: 480px;
         margin-top: 100px;
       }
       h1 {
@@ -243,6 +249,12 @@ server <- function(input, output, session){
   
   ### action observers ###
   #
+  # error fixer
+  observeEvent(eventExpr = input$refreshbutton, {
+    session$reload()
+  })
+ 
+  
   # when word clicked, swap userIdToPlay
   observeEvent(eventExpr =  #input$send, 
                  input$wordchoice,
@@ -390,6 +402,7 @@ server <- function(input, output, session){
   # This part decides which screen to show 
   # when one of the reactive values change
   ##
+  # gives option of resetting session if something goes wrong
   output$moreControls <- renderUI({
     # the mentions here make the reactivity work properly
     global$userIdToPlay   
@@ -398,7 +411,9 @@ server <- function(input, output, session){
     global$titlescreen
     global$playerspresent
     global$titleconfirmed
+    
     isolate({
+    tryCatch({ 
       ###
       # if somehow 3rd player connected, lock them out; could be used to monitor though.
       # no longer works, forcing players to be 1 or 2 - but now refreshing won't break game!
@@ -613,9 +628,14 @@ server <- function(input, output, session){
           
         } # end else
       } # end else 
+      }, error = function(e){return(tagList(
+        h3(HTML(paste0("<span style='color: red;'>", texts$error,   "</span>"))),
+           actionButton("refreshbutton", "If you were in the middle of a game, try clicking here to continue")
+        ) 
+        ) 
+        } ) # end trycatch 
     }) ### end isolate
   })
-  
 }
 #shinyApp(ui, server)
 # runApp(list(ui = ui, server = server),host="192.168.xx.xx",port=5013, launch.browser = TRUE)
